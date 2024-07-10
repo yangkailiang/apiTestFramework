@@ -1,0 +1,10 @@
+# pycharm生成文件
+.idea/
+.DS_Store
+__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+__pycache__/*
+allure_result/
+local_configs.py

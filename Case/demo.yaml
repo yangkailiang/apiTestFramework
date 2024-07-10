@@ -1,0 +1,29 @@
+- story: 演示测试集
+  collection:
+    - title: 演示用例
+      desc: 演示用例
+#      xfail: 预期失败
+      params:
+        guId: 1
+
+      marks:
+        - aa
+        - bb
+      apiList:
+        - url: 'api/pcApi/admin/portalColumnPc/columnList'
+          name: "接口名称"
+          method: get
+          body:
+          assertions:
+            - expression: "{{ resBody.code }}"
+              method: jinja
+              assertion: 相等
+              expect: "0000"
+          relations:
+            - expression: "{{ resBody.message }}"
+              method: jinja
+              name: message
+          pre:
+            - name: sleep
+              value: 1
+
