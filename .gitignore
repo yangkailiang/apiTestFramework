@@ -8,3 +8,4 @@ __pycache__/
 __pycache__/*
 allure_result/
 local_configs.py
+LOG/*

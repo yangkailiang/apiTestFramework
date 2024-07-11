@@ -8,7 +8,6 @@ from yaml import dump, load, FullLoader
 from traceback import format_exc
 
 
-
 # 单例模式元类
 class SingletonMeta(type):
     """ 单例模式元类 """
@@ -24,6 +23,7 @@ def custom_format(input_string, dictionary):
     def replacement(match):
         var_name = match.group(1)
         return dictionary.get(var_name, "{%s}" % var_name)
+
     return re.sub(r'\{(\w+)\}', replacement, input_string)
 
 
@@ -50,7 +50,9 @@ def exception_handler(message=None, standby_func=None, capture_exception=Excepti
                     standby_func(*args, **kwargs, message=f"{msg}\nError: {format_exc()}")
                 if throw_exception is not None:
                     raise throw_exception(f"{msg}\nError:{e}")
+
         return wrapper
+
     return decorator
 
 
@@ -202,5 +204,3 @@ def custom_dumps(data):
 
 class ProxiesError(Exception):
     """错误代理"""
-
-
