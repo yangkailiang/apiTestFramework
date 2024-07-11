@@ -1,22 +1,14 @@
 import ast
 import os
-import re
 from urllib.parse import quote
 from json import dumps
 from yaml import dump, load, FullLoader
 
+import json
+import re
+import jsonpath
+
 from traceback import format_exc
-
-
-# 单例模式元类
-class SingletonMeta(type):
-    """ 单例模式元类 """
-    _instances = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instances is None:
-            cls._instances = super().__call__(*args, **kwargs)
-        return cls._instances
 
 
 def custom_format(input_string, dictionary):
@@ -70,18 +62,6 @@ def read_yaml(path, key=None):
         if key:
             return data.get(key) if data else data
         return {} if not data else data
-
-
-def mkdir(dir_path):
-    """ 文件夹不存在时，创建文件夹"""
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-
-def mkfile(file_path):
-    """ 创建文件 """
-    if not os.path.exists(file_path):
-        open(file_path, mode='w').close()
 
 
 # 字符串转换为bool类型
@@ -204,3 +184,48 @@ def custom_dumps(data):
 
 class ProxiesError(Exception):
     """错误代理"""
+
+
+@exception_handler(message="拼接URL失败：Domain: {domain}, Path: {path}", throw_exception=RuntimeError)
+def url_join(domain, path):
+    domain = domain[:-1] if domain.endswith('/') else domain
+    path = path[1:] if path.startswith('/') else path
+    return f"{domain}/{path}"
+
+
+@exception_handler(message="jsonpath提取失败：Expression: {expression}, dData: {data}", throw_exception=RuntimeError)
+def extract_by_jsonpath(data: dict | str, expression: str):
+    """
+    jsonpath 提取器
+    :param data: 数据源
+    :param expression: 表达式
+    :return:
+    """
+    if not isinstance(data, dict):
+        raise RuntimeError('被提取的值不是json, 不支持jsonpath')
+
+    value = jsonpath.jsonpath(data, expression)
+    if value:
+        return value[0] if len(value) == 1 else value
+    else:
+        raise RuntimeError('jsonpath表达式错误: {}'.format(expression))
+
+
+# 正则提取
+@exception_handler(message="正则提取失败：Pattern: {pattern}, dData: {data}", throw_exception=RuntimeError)
+def extract_by_regex(data: dict | str, pattern: str):
+    """
+    正则提取器
+    :param data: 数据源
+    :param pattern: 表达式
+    :return:
+    """
+    if isinstance(data, dict):
+        content = json.dumps(data, ensure_ascii=False)
+    else:
+        content = data
+    result = re.findall(pattern, content)
+    if len(result) > 0:
+        return result[0] if len(result) == 1 else result
+    else:
+        raise RuntimeError("正则表达式匹配失败: {}".format(pattern))

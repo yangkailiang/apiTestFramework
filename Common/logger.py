@@ -1,5 +1,4 @@
 from logging import  DEBUG, INFO, WARNING, ERROR, CRITICAL, getLogger, Formatter, Handler
-from Common.utils import SingletonMeta
 
 
 class CustomFormatter(Formatter):
@@ -36,7 +35,7 @@ class ResultHandler(Handler):
         self.result.append(message)
 
 
-class Logger(metaclass=SingletonMeta):
+class Logger:
     level_relations = {
         'debug': DEBUG,
         'info': INFO,

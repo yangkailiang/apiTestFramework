@@ -3,11 +3,10 @@ import requests
 from collections import ChainMap
 from functools import partial
 
-from Common.utils import exception_handler, custom_dumps
+from Common.utils import exception_handler, custom_dumps, url_join
 from Common import logger
 from Common.render import Render
 
-from Core.utils import url_join
 from Core.model.http import HttpApiStructural, HTTPRequestStructura
 from Core.model.environment import EnvironmentStructural
 from Core.api.controller import ApiController
@@ -87,8 +86,11 @@ class HttpApiTestCase(ApiController):
         self.assemble_request_params()
         # 3. 逻辑判断是否跳过
         self.execute_whetherExec(whetherExec=self.api.whetherExec)
+
         # 4. 请求接口
+        self.extract_auto_plugin(when="beforeRequest")
         self.send_request(**self.request.model_dump(by_alias=True))
+        self.extract_auto_plugin(when="afterRequest")
         # 5. 执行后置操作
         self.execute_plugin(opts=self.api.post)
         # 6. 断言

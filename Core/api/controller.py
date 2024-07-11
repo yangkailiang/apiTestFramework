@@ -3,30 +3,31 @@ import sys
 
 from Common import logger
 from Common.exceptions import ConditionNotEstablished
-from Common.utils import exception_handler
-# from Core.api.httpApi import HttpApiTestCase
+from Common.utils import exception_handler, extract_by_jsonpath, extract_by_regex
 
 from Core.assertion import compare
-from Core.utils import extract_by_jsonpath, extract_by_regex
-
+from Core.model.controller import Plugin
 from configs import PLUGINS
 
 
 class DynamicImporter:
-    def __init__(self, module_name):
+    def __init__(self, module_name, is_del=True):
         self.module_name = module_name
+        self.is_del = is_del
 
     def __enter__(self) -> list:
         # 在进入上下文时导入模块
         try:
-
-            return importlib.import_module(self.module_name)
+            if self.module_name in sys.modules:
+                return sys.modules[self.module_name]
+            else:
+                return importlib.import_module(self.module_name)
         except Exception as e:
             raise RuntimeError(f"导包出错{self.module_name}: {str(e)}")
 
     def __exit__(self, exc_type, exc_value, traceback):
         # 在离开上下文时进行清理
-        if self.module_name in sys.modules:
+        if self.is_del is True and self.module_name in sys.modules:
             del sys.modules[self.module_name]
 
 
@@ -45,6 +46,16 @@ class ApiController:
             if success is False:
                 raise ConditionNotEstablished("条件不成立，跳过执行")
 
+    def _execute_plugin(self, plugin, value, is_del=True):
+        with DynamicImporter(plugin["module"], is_del=is_del) as module:
+            if isinstance(value, dict):
+                getattr(module, plugin["func"])(case=self, **value)
+
+            elif isinstance(value, list):
+                getattr(module, plugin["func"])(case=self, *value)
+            else:
+                getattr(module, plugin["func"])(self, value)
+
     @exception_handler(message="执行操作出错：", throw_exception=RuntimeError)
     def execute_plugin(self, opts):
         if not opts:
@@ -52,15 +63,7 @@ class ApiController:
         for opt in opts:
             if not PLUGINS.get(opt.name):
                 raise RuntimeError(f"未知的插件: {opt.name}")
-            plugin = PLUGINS[opt.name]
-            with DynamicImporter(plugin["module"]) as module:
-                if isinstance(opt.value, dict):
-                    getattr(module, plugin["func"])(case=self, **opt.value)
-
-                elif isinstance(opt.value, list):
-                    getattr(module, plugin["func"])(case=self, *opt.value)
-                else:
-                    getattr(module, plugin["func"])(self, opt.value)
+            self._execute_plugin(PLUGINS[opt.name], opt.value)
 
     def extract(self, name: str, expression: str):
         if name == 'jsonpath':
@@ -100,3 +103,8 @@ class ApiController:
             logger.info(f"关联参数提取成功，取值函数：{relation.method}，变量名:{relation.name}，提取结果:{result}")
         self.relation_params.update(relations_result)
         return relations_result
+
+    def extract_auto_plugin(self, when):
+        for name, plugin in PLUGINS.items():
+            if plugin.get("when") == when and plugin.get("auto") is True:
+                self._execute_plugin(plugin=plugin, value=plugin.get("value"), is_del=False)

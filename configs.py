@@ -16,9 +16,11 @@ EXTRACT_METHOD_DEFAULT = "jinja"  # 默认提取方法
 TZP_DEFAULT = 'mysql'  # 数据库类型
 ENV_DEFAULT = 'test'  # 默认执行环境
 
-HTTP_REQUEST_METHOD_DEFAULT = "GET"  # 默认请求方法
+HTTP_REQUEST_METHOD_DEFAULT = "POST"  # 默认请求方法
 HTTP_REQUEST_TYPE_DEFAULT = "json"  # 默认请求类型
 HTTP_RESPONSE_TYPE_DEFAULT = "json"  # 默认响应类型
+
+ASSERTION_METHOD_DEFAULT = "equal"  # 默认断言方法
 
 # 环境配置参数配置，考虑到一套自动化代码要在多个环境执行，故增加此配置
 ENVS = {
@@ -63,5 +65,13 @@ PLUGINS = {
     "sleep": {
         "module": "Plugins.sys_plugins",
         "func": "sleep_plugin",
+    },
+
+    "codeAssertAppend": {
+        "module": "Plugins.sys_plugins",
+        "func": "add_assertion_plugin",
+        "auto": True,  # 是否自动执行
+        "when": "afterRequest",  # 执行时间
+        "value": {"expression": "{{resBody.code}}", "expect": "0000"},  # 执行参数
     },
 }

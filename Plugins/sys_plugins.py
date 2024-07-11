@@ -6,10 +6,12 @@ from pymysql import connect
 from pymysql.cursors import DictCursor
 from Common import logger
 from Common.utils import exception_handler
+from Core.model.controller import Assertion
 
 
 def restore_standard_output(*args, **kwargs):
     sys.stdout = sys.__stdout__
+
 
 @exception_handler(message='执行SQLb报错：{sqlText}', throw_exception=RuntimeError)
 def execute_sql_plugin(case, sqlText, name, db):
@@ -65,3 +67,10 @@ def execute_script_plugin(case, script):
 def sleep_plugin(case, second):
     logger.info(f"强制延时：{second}")
     time.sleep(int(second))
+
+
+def add_assertion_plugin(case, expression, expect, **kwargs):
+    assertion = Assertion(expression=expression, expect=expect, **kwargs)
+    case.api.assertions.append(assertion)
+    logger.info(f"插件添加断言成功：表达式: {expression} 预期结果：{expect}, 提取方法：{assertion.method} 断言方式：{assertion.assertion}")
+

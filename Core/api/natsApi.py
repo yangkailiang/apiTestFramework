@@ -94,7 +94,9 @@ class NatsApiTestCase(ApiController):
         # 3. 逻辑判断是否跳过
         self.execute_whetherExec(whetherExec=self.api.whetherExec)
         # 4. 请求接口
+        self.extract_auto_plugin(when="beforeRequest")
         self.send_request(**self.request.model_dump(by_alias=True))
+        self.extract_auto_plugin(when="afterRequest")
         # 5. 执行后置操作
         self.execute_plugin(opts=self.api.post)
         # 6. 断言
